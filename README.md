@@ -42,13 +42,61 @@ Principais Insights:
 ## Algumas correlações interessantes entre features
 
 ### OnlineBackup X OnlineSecurity X DeviceProtection
-Em todos os casos analisados, percebemos que geralmente quando o cliente recusa uma das formas de segurança ele recusa todas. Porem, no caso contrário, geralmente quando ele aceita uma há uma probabiidade muito maior de ele aceitar uma segunda, talvez valha a pena investir em planos promocionais que incluam os 3 serviços de segurança juntos
-![image](https://github.com/VitorLeitao/Telco-Customer-Churn/assets/101846159/936c5a77-9692-41de-9af1-e3319e9b82ba)
+- Em todos os casos analisados, percebemos que geralmente quando o cliente recusa uma das formas de segurança ele recusa todas. Porem, no caso contrário, geralmente quando ele aceita uma há uma probabiidade muito maior de ele aceitar uma segunda, talvez valha a pena investir em planos promocionais que incluam os 3 serviços de segurança juntos
+- ![image](https://github.com/VitorLeitao/Telco-Customer-Churn/assets/101846159/936c5a77-9692-41de-9af1-e3319e9b82ba)
 
 ### StreamingMovies X StreamingTV
-Percebemos que a grande maioria das pessoas que assinam o Streaming de TV também assinam o de Filmes, e geralmente quem não assina um também não assina o outro
-![image](https://github.com/VitorLeitao/Telco-Customer-Churn/assets/101846159/42073cf0-a936-4f49-ab76-ba4a438106a7)
+- Percebemos que a grande maioria das pessoas que assinam o Streaming de TV também assinam o de Filmes, e geralmente quem não assina um também não assina o outro
+- ![image](https://github.com/VitorLeitao/Telco-Customer-Churn/assets/101846159/42073cf0-a936-4f49-ab76-ba4a438106a7)
 
 ### Partner X Dependents
-As duas variaveis tem uma forte correlação, **Mostrando que a grande maioria das pessoas que tem dependente possuem também um parceiro**, indicando que a maioria das pessoas costuma colocar seu parceiro como dependente
-![image](https://github.com/VitorLeitao/Telco-Customer-Churn/assets/101846159/66a3aaf9-aa4e-44e6-a3a0-747aab49c534)
+- As duas variaveis tem uma forte correlação, **Mostrando que a grande maioria das pessoas que tem dependente possuem também um parceiro**, indicando que a maioria das pessoas costuma colocar seu parceiro como dependente
+- ![image](https://github.com/VitorLeitao/Telco-Customer-Churn/assets/101846159/66a3aaf9-aa4e-44e6-a3a0-747aab49c534)
+
+
+## 💻 Modelagem do preditor de Churn
+Em primeira mão, fizemos alguns pre-processamentos importantes para o funcionamento adequado do modelo, como transformar variáveis categóricas em numéricas e dividir a base em treino e teste.
+
+### Modelagem preliminar
+- Após o preprocessamento, tinhamos que escolher quais seriam os modelos a serem usados nesse projeto, pra isso, usamos Grid Search para determinar o melhor resultado do F1 de cada modelo(Random Forest, Naive bayes, Redes neurais, XGB, KNN, Regressão logistica)
+- A escolha do F1 como metrica principal veio por se tratar de um dataset que tem como principal atributo o Churn, mais especificamente quando ele assume o valor 1(quando o cliente sai da empresa). Ao usar a acuracia, ela "mascarava" a real Eficácia do modelo, pois na maioria das vezes ele acertava muito mais quando o Churn assumia 0, o que é menos importante pra esse projeto
+- Os modelos que se sariam melhor foram:
+- 1: Naive bayes(acc: 0.76, F1: 0.61)
+- ![image](https://github.com/VitorLeitao/Telco-Customer-Churn/assets/101846159/4e20bfab-0f6d-46d8-a503-2e3844ec7779)
+- 2: Random Forest(acc: 0.87, F1: 0.57)
+- ![image](https://github.com/VitorLeitao/Telco-Customer-Churn/assets/101846159/5c49219a-d223-4ef2-a813-e8e8a9c030be)
+- **OBS**: esse era o caso citado anteriormente, onde o modelo de random forest teve uma acc muito maior que o nb, porem ao analisar a matriz de confusão fica nitido que o modelo de random fortest é pior para esse projeto, uma vez que erra muito mais quando o churn = 1, mas a acc é "mascarada" por sua taxa de acerto quando o churn=0, que é bem menor importante para esse projeto
+- 3: Regressão logistica(acc: 0.82, F1: 0.60)
+- ![image](https://github.com/VitorLeitao/Telco-Customer-Churn/assets/101846159/76ef14bf-e362-457d-a886-01677dedc130)
+
+## Otimizando os modelos
+Após a escolha dos modelos que serão usados ao decorrer do projeto, temos que tentar melhora-los. Como a otimização dos parametos ja foi feita quando rodamos o Grid Search, os metodos escolhidos para melhorar os modelos foram: Escalonar os dados, Analisar as Correlações, tratar Dados desbalanceados. 
+
+### Otimizando o Random Forest
+- Após testar todas as otimizações citadas acima, a unica que resultou em um ganho de desempenho foi balancear a base de dados por meio da tecnica SMOTE, que cria artificialmente alguns dados da classe que tem menos registros, que nesse caso, era o Churn=1.
+- Contexto: Houve uma pequena queda da acuracia do Random Forest nesse processo, uma vez que ele passou a acertar mais o Churn=1, mas acertou um pouco menos no Churn=0, apos uma avaliação de o que a empresa mais precisava, essa mudança foi considerada eficiente para a empresa
+- ![image](https://github.com/VitorLeitao/Telco-Customer-Churn/assets/101846159/327010f8-ecb1-4618-bded-d270d23afa23)
+
+### Otimizando o Naive Bayes
+- De maneira semelhante ao Random Forest, o Naive Bayes apresentou uma melhora siginificativa após o balanceamentos dos dados com SMOTE. Alem disso, também houve uma melhora quando retiramos a coluna TotalCharges, que tinha uma correlação de 0.82 com a coluna tenure:
+- ![image](https://github.com/VitorLeitao/Telco-Customer-Churn/assets/101846159/6692a180-2918-4390-a481-913905d8a040)
+- O resultado final também se assemelha ao random forest, com uma melhora consideravel na predição do Churn=1, pagando o preço da diminuição de acuracia do Churn=0, que se torna viável pelo teor do projeto e pelo o que a empresa exige
+- ![image](https://github.com/VitorLeitao/Telco-Customer-Churn/assets/101846159/ef4deefa-6bb5-4e51-8b16-22e7cc53d30c)
+
+  ### Otimizando a Regressão Logistica
+  - As otimizações da regressão logistica seguiram os passos do random forest, com uma melhora ao balancear os dados, com o mesmo preço a ser pago, de diminuição da acuracia quando o Churn=0
+  - ![image](https://github.com/VitorLeitao/Telco-Customer-Churn/assets/101846159/803d9f70-9d19-44ba-ae59-0e3cb5c514ac)
+ 
+  ## Combinando os classificadores
+  - Apos a escolha e otimização dos modelos de ML, decidimos juntar o resultado dos 3
+  - Usamos o naive bayes como modelo com maior peso de decisão, uma vez que ele tinha a maior taxa de acerto de churn = 1. Fizemos com que sempre que o Naive Bayes tivesse uma certeza menor que 0.85 em sua predição, a classe seria decidida através do voto da maioria, fazendo com que pegassemos o melhor de cada modelo, encontrando um resultado bem melhor
+
+## Conclusão
+- Conseguimos unir os resultados de forma a mesclar de uma forma satisfatória a acurácia e o F1, uma vez que os primeiros modelos testados tinham uma acurácia muito boa, mas era péssimo em prever o churn =1. No modelo final consegui diminuir essa diferença, aumentando o F1 score, mas perdendo parte da acurácia no processo, o que é válido para esse caso específico, no qual a taxa de acerto do Churn = 1 é uma métrica de extrema importância, com isso, chegamos a esse resultado final:
+- Acuracia: 0.795
+- F1 Score: 0.657
+- ![image](https://github.com/VitorLeitao/Telco-Customer-Churn/assets/101846159/df86d8b4-c87a-4a56-983c-e8aad8d219ea)
+
+
+
+
